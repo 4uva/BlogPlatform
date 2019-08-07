@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using BlogPlatform.Models.EF_Model_classes;
 using AutoMapper;
 
@@ -25,8 +26,20 @@ namespace BlogPlatform.Controllers
         protected int GetBlogId() =>
             int.Parse(HttpContext.User.Claims.Single(c => c.Type == "BlogId").Value);
 
-        protected async Task<Blog> GetBlog() =>
-            await context.Blogs.FindAsync(GetBlogId());
+        protected async Task<Blog> GetBlogById(int id) =>
+            await context.Blogs.FindAsync(id);
+
+        protected Task<Blog> GetBlog() => GetBlogById(GetBlogId());
+
+        protected async Task<BlogPost> GetBlogPostWithCommentsById(int id)
+        {
+            var blogpost =
+                await context.BlogPosts
+                             .Include(p => p.Comments)
+                                 .ThenInclude(c => c.Author)
+                             .SingleOrDefaultAsync(p => p.BlogPostId == id);
+            return blogpost;
+        }
 
         protected readonly BlogsDataBaseContext context;
         protected readonly IMapper mapper;

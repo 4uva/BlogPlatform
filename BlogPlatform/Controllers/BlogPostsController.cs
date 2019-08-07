@@ -35,11 +35,15 @@ namespace BlogPlatform.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<FullBlogPost>>> GetBlogPosts()
         {
-            var blog = await GetBlog();
-            await context.Entry(blog).Collection(b => b.BlogPosts).LoadAsync();
+            // cannot explicitly load subitems so a full query is needed
+            var blogId = GetBlogId();
+            var posts = await context.Blogs
+                                     .Where(b => b.BlogId == blogId)
+                                     .SelectMany(b => b.BlogPosts)
+                                     .Include(p => p.Comments)
+                                     .ToListAsync();
 
-            var apiBlogPostList = mapper.Map<List<FullBlogPost>>(blog.BlogPosts);
-
+            var apiBlogPostList = mapper.Map<List<FullBlogPost>>(posts);
             return apiBlogPostList;
         }
 
@@ -47,8 +51,7 @@ namespace BlogPlatform.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<FullBlogPost>> GetBlogPost(int id)
         {
-            var blogPost = await context.BlogPosts.FindAsync(id);
-
+            var blogPost = await GetBlogPostWithCommentsById(id);
             if (blogPost == null)
                 return NotFound();
 

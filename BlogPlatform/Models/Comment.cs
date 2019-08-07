@@ -7,6 +7,7 @@ namespace BlogPlatform.Models
 {
     public class Comment
     {
-        string comment;
+        public string Text { get; set; }
+        public int Author { get; set; }
     }
 }

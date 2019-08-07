@@ -35,7 +35,7 @@ namespace BlogPlatform.Models.EF_Model_classes
                         .IsRequired();
 
             modelBuilder.Entity<Comment>()
-                        .HasOne(p => p.User);
+                        .HasOne(p => p.Author);
         }
 
         public DbSet<Blog> Blogs { get; set; }

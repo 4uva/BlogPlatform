@@ -1,19 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using EFComment = BlogPlatform.Models.EF_Model_classes.Comment;
-using BlogsDataBaseContext = BlogPlatform.Models.EF_Model_classes.BlogsDataBaseContext;
-using AutoMapper;
-using BlogPlatform.Models;
 using Microsoft.Extensions.Logging;
+
+using AutoMapper;
+
+using BlogPlatform.Models;
+
+using BlogsDataBaseContext = BlogPlatform.Models.EF_Model_classes.BlogsDataBaseContext;
+using EFComment = BlogPlatform.Models.EF_Model_classes.Comment;
 
 namespace BlogPlatform.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/BlogPosts/{blogPostId}/[controller]")]
     [ApiController]
     public class CommentsController : ControllerCommon<CommentsController>
     {
@@ -24,23 +27,23 @@ namespace BlogPlatform.Controllers
         {
         }
 
-        // GET: api/Comments
+        // GET: api/BlogPost/5/Comments
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Comment>>> GetComments()
+        public async Task<ActionResult<IEnumerable<Comment>>> GetComments(int blogPostId)
         {
-            var commentlist = await context.Comments.ToListAsync();
+            var postWithComments = await GetBlogPostWithCommentsById(blogPostId);
+            if (postWithComments == null)
+                return NotFound();
 
-            var apicommentlist = mapper.Map<List<Comment>>(commentlist);
-
+            var apicommentlist = mapper.Map<List<Comment>>(postWithComments.Comments);
             return apicommentlist;
         }
 
-        // GET: api/Comments/5
+        // GET: api/Blogpost/5/Comments/7
         [HttpGet("{id}")]
-        public async Task<ActionResult<Comment>> GetComment(int id)
+        public async Task<ActionResult<Comment>> GetComment(int blogPostId, int id)
         {
             var comment = await context.Comments.FindAsync(id);
-
             if (comment == null)
                 return NotFound();
 
@@ -74,15 +77,17 @@ namespace BlogPlatform.Controllers
             return NoContent();
         }
 
-        // POST: api/Comments
+        // POST: api/BlogPost/5/Comments
         [HttpPost]
-        public async Task<ActionResult<Comment>> PostComment(Comment comment)
+        [Authorize]
+        public async Task<ActionResult<Comment>> PostComment(int blogPostId, Comment comment)
         {
-            var apicomment = mapper.Map<EFComment>(comment);
-            context.Comments.Add(apicomment);
+            var efcomment = mapper.Map<EFComment>(comment);
+            var blogPost = await context.BlogPosts.FindAsync(blogPostId);
+            blogPost.Comments = new[] { efcomment };
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetComment", new { id = apicomment.CommentId }, comment);
+            return CreatedAtAction("GetComment", new { id = efcomment.CommentId }, comment);
         }
 
         // DELETE: api/Comments/5
