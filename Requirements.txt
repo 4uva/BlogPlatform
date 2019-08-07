@@ -1,0 +1,24 @@
+Backend
+=======
+
+Create REST API to manage blogs and comments
+
+Functional requirements:
+
+1. REST API with CRUD methods for blog posts and comments
+2. Validation for models
+3. Authorization via ApiKey (random generated key)
+4. 1 Unit test
+5. 1 Integration test
+6. Http caching for 1 method
+
+Technical requirements:
+
+1. ASP.NET Core.
+2. Entity Framework.
+3. Automapper.
+4. Swagger
+5. Please add comments to your code in English.
+6. Feel free to show your skills - IoC, stylecop, and other best practices of coding.
+
+Main goal is to show skills (but not deliver 100% finished working project).
