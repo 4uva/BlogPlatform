@@ -7,7 +7,7 @@ namespace BlogPlatform.Models
 {
     public class FullBlogPost : BlogPost
     {
-        public List<Comment> Comments { get; set; }
+        public List<FullComment> Comments { get; set; }
         public int BlogPostId { get; set; }
     }
 }
