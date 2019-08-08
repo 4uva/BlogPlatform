@@ -26,9 +26,9 @@ namespace BlogPlatformIntegrationTest
         {
             var client = factory.CreateClient();
 
-            var responce = await client.GetAsync("api/BlogPosts/1");
-            responce.EnsureSuccessStatusCode();
-            var post = await responce.Content.ReadAsAsync<FullBlogPost>();
+            var response = await client.GetAsync("api/BlogPosts/1");
+            response.EnsureSuccessStatusCode();
+            var post = await response.Content.ReadAsAsync<FullBlogPost>();
             // check
             Assert.NotNull(post);
             Assert.Equal(DbCreator.postText, post.BodyText);
