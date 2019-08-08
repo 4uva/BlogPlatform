@@ -6,11 +6,11 @@ Create REST API to manage blogs and comments
 Functional requirements:
 
 1. REST API with CRUD methods for blog posts and comments [x]
-2. Validation for models
+2. Validation for models [-] (is done automatically because of [ApiController])
 3. Authorization via ApiKey (random generated key) [x] (JWT)
 4. 1 Unit test [x]
 5. 1 Integration test [x]
-6. Http caching for 1 method [n/a?]
+6. Http caching for 1 method [x]
 
 Technical requirements:
 

@@ -48,6 +48,7 @@ namespace BlogPlatform.Controllers
 
         // GET: api/BlogPosts/5
         [HttpGet("{id}")]
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
         public async Task<ActionResult<FullBlogPost>> GetBlogPost(int id)
         {
             var blogPost = await GetBlogPostWithCommentsById(id);

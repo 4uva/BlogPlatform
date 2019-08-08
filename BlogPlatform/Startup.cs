@@ -81,6 +81,8 @@ namespace BlogPlatform
                 };
             });
 
+            services.AddResponseCaching();
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Blogs API", Version = "v1" });
@@ -100,15 +102,20 @@ namespace BlogPlatform
                 app.UseHsts();
             }
 
+            // must be before others according to
+            // https://docs.microsoft.com/en-us/aspnet/core/performance/caching/middleware
+            // ?view=aspnetcore-2.2#conditions-for-caching
+            app.UseResponseCaching();
+
+            app.UseHttpsRedirection();
+            app.UseAuthentication();
+            app.UseMvc();
+
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Blogs API v1");
             });
-
-            app.UseHttpsRedirection();
-            app.UseAuthentication();
-            app.UseMvc();
         }
     }
 }
