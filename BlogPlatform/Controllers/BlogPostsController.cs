@@ -36,6 +36,7 @@ namespace BlogPlatform.Controllers
         {
             // cannot explicitly load subitems so a full query is needed
             var blogId = GetBlogId();
+            logger.LogInformation("Getting all posts for blog {blogId}", blogId);
             var posts = await context.Blogs
                                      .Where(b => b.BlogId == blogId)
                                      .SelectMany(b => b.BlogPosts)
@@ -43,6 +44,7 @@ namespace BlogPlatform.Controllers
                                      .ToListAsync();
 
             var apiBlogPostList = mapper.Map<List<FullBlogPost>>(posts);
+            logger.LogInformation("Successfully got all posts for blog {blogId}", blogId);
             return apiBlogPostList;
         }
 
@@ -51,11 +53,16 @@ namespace BlogPlatform.Controllers
         [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
         public async Task<ActionResult<FullBlogPost>> GetBlogPost(int id)
         {
+            logger.LogInformation("Getting post by id {id}", id);
             var blogPost = await GetBlogPostWithCommentsById(id);
             if (blogPost == null)
+            {
+                logger.LogWarning("Post with id {id} doesn't exist", id);
                 return NotFound("Post id doesn't exist");
+            }
 
             var apiBlogPost = mapper.Map<FullBlogPost>(blogPost);
+            logger.LogWarning("Succesfully fetched post with id {id}", id);
             return apiBlogPost;
         }
 
@@ -64,9 +71,13 @@ namespace BlogPlatform.Controllers
         [Authorize]
         public async Task<IActionResult> PutBlogPost(int id, BlogPost blogPost)
         {
+            logger.LogInformation("Editing post by id {id}", id);
             var (errorResult, efblogPost) = await CheckEditingRights(id);
             if (errorResult != null)
+            {
+                logger.LogInformation("Editing post {id} not possible/allowed", id);
                 return errorResult;
+            }
 
             var putBlogPost = mapper.Map<EFBlogPost>(blogPost);
             putBlogPost.BlogPostId = id;
@@ -76,14 +87,20 @@ namespace BlogPlatform.Controllers
             entry.CurrentValues.SetValues(putBlogPost);
             entry.State = EntityState.Modified;
 
+            logger.LogInformation("Edited post {id}, writing to the database", id);
             try
             {
                 await context.SaveChangesAsync();
+                logger.LogInformation("Post {id} writing to the database succeeded", id);
             }
             catch (DbUpdateConcurrencyException)
             {
                 if (!BlogPostExists(id))
+                {
+                    logger.LogInformation("Post {id} has been deleted concurrently during update", id);
                     return NotFound("Post doesn't exist any more");
+                }
+                logger.LogInformation("Post {id} editing has encountered concurrency problem", id);
                 throw;
             }
 
@@ -95,14 +112,18 @@ namespace BlogPlatform.Controllers
         [Authorize]
         public async Task<ActionResult<int>> PostBlogPost(BlogPost blogPost)
         {
+            logger.LogInformation("Adding new post");
             var apiBlogPost = mapper.Map<EFBlogPost>(blogPost);
 
             var blog = await GetBlog();
             if (blog.BlogPosts == null)
                 blog.BlogPosts = new List<EFBlogPost>();
             blog.BlogPosts.Add(apiBlogPost);
+
+            logger.LogInformation("Post added, writing to the database");
             await context.SaveChangesAsync();
 
+            logger.LogInformation("Post with id {id} successfully created", apiBlogPost.BlogPostId);
             return apiBlogPost.BlogPostId;
         }
 
@@ -111,14 +132,21 @@ namespace BlogPlatform.Controllers
         [Authorize]
         public async Task<ActionResult<BlogPost>> DeleteBlogPost(int id)
         {
+            logger.LogInformation("Deleting post by id {id}", id);
             var (errorResult, blogPost) = await CheckEditingRights(id);
             if (errorResult != null)
+            {
+                logger.LogInformation("Deleting post {id} not possible/allowed", id);
                 return errorResult;
+            }
 
             var deleteBlogPost = mapper.Map<BlogPost>(blogPost);
             context.BlogPosts.Remove(blogPost);
+
+            logger.LogInformation("Post deleted, writing to the database");
             await context.SaveChangesAsync();
 
+            logger.LogInformation("Post deleting succeeded");
             return deleteBlogPost;
         }
 
@@ -129,12 +157,21 @@ namespace BlogPlatform.Controllers
         {
             var post = await context.BlogPosts.FindAsync(id);
             if (post == null)
+            {
+                logger.LogWarning("Post with id {id} doesn't exist", id);
                 return (NotFound("No post with this id"), null);
+            }
 
             var entry = context.Entry(post);
-            if (post.BlogId != GetBlogId())
+            var editorBlogId = GetBlogId();
+            if (post.BlogId != editorBlogId)
+            {
+                logger.LogWarning("Post with id {id} belongs to {ActualBlogId}, " +
+                    "not modifyable by {EditorBlogId}", id, post.BlogId, editorBlogId);
                 return (Forbid(), null);
+            }
 
+            logger.LogInformation("Security checks for modification of post {id} passed", id);
             return (null, post);
         }
     }
