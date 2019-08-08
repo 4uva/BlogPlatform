@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 
 namespace BlogPlatform.Models
 {
-    public class Comment
+    public class FullComment : Comment
     {
-        public string Text { get; set; }
+        public int Author { get; set; }
+        public int Id { get; set; }
     }
 }

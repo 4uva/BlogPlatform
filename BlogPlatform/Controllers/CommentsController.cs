@@ -29,34 +29,49 @@ namespace BlogPlatform.Controllers
 
         // GET: api/BlogPost/5/Comments
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Comment>>> GetComments(int blogPostId)
+        public async Task<ActionResult<IEnumerable<FullComment>>> GetComments(int blogPostId)
         {
             var postWithComments = await GetBlogPostWithCommentsById(blogPostId);
             if (postWithComments == null)
                 return NotFound();
 
-            var apicommentlist = mapper.Map<List<Comment>>(postWithComments.Comments);
+            var apicommentlist = mapper.Map<List<FullComment>>(postWithComments.Comments);
             return apicommentlist;
         }
 
         // GET: api/Blogpost/5/Comments/7
         [HttpGet("{id}")]
-        public async Task<ActionResult<Comment>> GetComment(int blogPostId, int id)
+        public async Task<ActionResult<FullComment>> GetComment(int blogPostId, int id)
         {
             var comment = await context.Comments.FindAsync(id);
             if (comment == null)
-                return NotFound();
+                return NotFound("Comment id doesn't exist");
 
-            var apicomment = mapper.Map<Comment>(comment);
+            await context.Entry(comment).Reference(c => c.Author).LoadAsync();
+            if (comment.BlogPostId != blogPostId)
+                return BadRequest("Comment belongs to different post");
+
+            var apicomment = mapper.Map<FullComment>(comment);
             return apicomment;
         }
 
-        // PUT: api/Comments/5
+        // PUT: api/Blogpost/5/Comments/7
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutComment(int id, Comment comment)
+        [Authorize]
+        public async Task<IActionResult> PutComment(int blogPostId, int id, Comment comment)
         {
+            var (errorResult, efcomment) = await CheckEditingRights(blogPostId, id);
+            if (errorResult != null)
+                return errorResult;
+
             var putcomment = mapper.Map<EFComment>(comment);
-            context.Entry(putcomment).State = EntityState.Modified;
+            putcomment.CommentId = id;
+            putcomment.BlogPostId = efcomment.BlogPostId;
+
+            // all checks are done, saving
+            var entry = context.Entry(efcomment);
+            entry.CurrentValues.SetValues(putcomment);
+            entry.State = EntityState.Modified;
 
             try
             {
@@ -65,13 +80,8 @@ namespace BlogPlatform.Controllers
             catch (DbUpdateConcurrencyException)
             {
                 if (!CommentExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                    return NotFound("Comment doesn't exist any more");
+                throw;
             }
 
             return NoContent();
@@ -80,32 +90,54 @@ namespace BlogPlatform.Controllers
         // POST: api/BlogPost/5/Comments
         [HttpPost]
         [Authorize]
-        public async Task<ActionResult<Comment>> PostComment(int blogPostId, Comment comment)
+        public async Task<ActionResult<int>> PostComment(int blogPostId, Comment comment)
         {
             var efcomment = mapper.Map<EFComment>(comment);
+            efcomment.Author = await GetBlog();
             var blogPost = await context.BlogPosts.FindAsync(blogPostId);
+            if (blogPost == null)
+                return NotFound("Post doesn't exist");
+
             blogPost.Comments = new[] { efcomment };
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetComment", new { id = efcomment.CommentId }, comment);
+            return efcomment.CommentId;
         }
 
-        // DELETE: api/Comments/5
+        // DELETE: api/BlogPosts/5/Comments/7
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Comment>> DeleteComment(int id)
+        [Authorize]
+        public async Task<ActionResult<FullComment>> DeleteComment(int blogPostId, int id)
         {
-            var comment = await context.Comments.FindAsync(id);
-            if (comment == null)
-                return NotFound();
+            var (errorResult, efcomment) = await CheckEditingRights(blogPostId, id);
+            if (errorResult != null)
+                return errorResult;
 
-            var deleteComment = mapper.Map<Comment>(comment);
-            context.Comments.Remove(comment);
+            var deleteComment = mapper.Map<FullComment>(efcomment);
+            context.Comments.Remove(efcomment);
             await context.SaveChangesAsync();
 
             return deleteComment;
         }
 
-        private bool CommentExists(int id) =>
+        bool CommentExists(int id) =>
             context.Comments.Any(e => e.CommentId == id);
+
+        async Task<(ActionResult, EFComment)> CheckEditingRights(int blogPostId, int id)
+        {
+            var comment = await context.Comments.FindAsync(id);
+            if (comment == null)
+                return (NotFound("No comment with this id"), null);
+
+            if (comment.BlogPostId != blogPostId)
+                return (BadRequest("Comment belongs to a different post"), null);
+
+            var entry = context.Entry(comment);
+            await entry.Reference(c => c.Author).LoadAsync();
+            if (comment.Author.BlogId != GetBlogId())
+                return (Forbid(), null);
+
+            return (null, comment);
+        }
     }
 }

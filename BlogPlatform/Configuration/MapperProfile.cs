@@ -20,9 +20,11 @@ namespace BlogPlatform.Configuration
             CreateMap<EFBlogPost, FullBlogPost>();
             // back mapping should not be needed BlogPostWithComments->EFBlogPost
 
-            CreateMap<EFComment, Comment>().IncludeMembers(c => c.Author);
-            CreateMap<EFBlog, Comment>()
-                .ForMember(dest => dest.Author, opt => opt.MapFrom(src => src.BlogId));
+            // commentid, text, author.blogid -> id, text, author
+            CreateMap<EFComment, FullComment>()
+                .ForMember(dest => dest.Author, opt => opt.MapFrom(src => src.Author.BlogId))
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.CommentId));
+            CreateMap<Comment, EFComment>();
         }
     }
 }

@@ -26,16 +26,19 @@ namespace BlogPlatform.Models.EF_Model_classes
 
             modelBuilder.Entity<Blog>()
                         .HasMany(b => b.BlogPosts)
-                        .WithOne(p => p.Blog)
+                        .WithOne()
+                        .HasForeignKey(p => p.BlogId)
                         .IsRequired();
 
             modelBuilder.Entity<BlogPost>()
                         .HasMany(p => p.Comments)
                         .WithOne()
+                        .HasForeignKey(c => c.BlogPostId)
                         .IsRequired();
 
             modelBuilder.Entity<Comment>()
-                        .HasOne(p => p.Author);
+                        .HasOne(p => p.Author)
+                        .WithMany();
         }
 
         public DbSet<Blog> Blogs { get; set; }

@@ -13,5 +13,7 @@ namespace BlogPlatform.Models.EF_Model_classes
         public string Text { get; set; }
 
         public Blog Author { get; set; }
+
+        public int BlogPostId { get; set; }
     }
 }

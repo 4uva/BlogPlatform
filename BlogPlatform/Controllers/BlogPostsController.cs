@@ -53,7 +53,7 @@ namespace BlogPlatform.Controllers
         {
             var blogPost = await GetBlogPostWithCommentsById(id);
             if (blogPost == null)
-                return NotFound();
+                return NotFound("Post id doesn't exist");
 
             var apiBlogPost = mapper.Map<FullBlogPost>(blogPost);
             return apiBlogPost;
@@ -64,18 +64,15 @@ namespace BlogPlatform.Controllers
         [Authorize]
         public async Task<IActionResult> PutBlogPost(int id, BlogPost blogPost)
         {
+            var (errorResult, efblogPost) = await CheckEditingRights(id);
+            if (errorResult != null)
+                return errorResult;
+
             var putBlogPost = mapper.Map<EFBlogPost>(blogPost);
             putBlogPost.BlogPostId = id;
+            putBlogPost.BlogId = efblogPost.BlogId;
 
-            var existingPost = await context.BlogPosts.FindAsync(id);
-            if (existingPost == null)
-                return NotFound();
-
-            var entry = context.Entry(existingPost);
-            await entry.Reference(p => p.Blog).LoadAsync();
-            if (existingPost.Blog.BlogId != GetBlogId())
-                return Forbid(); // wrong blog :-P
-
+            var entry = context.Entry(efblogPost);
             entry.CurrentValues.SetValues(putBlogPost);
             entry.State = EntityState.Modified;
 
@@ -86,7 +83,7 @@ namespace BlogPlatform.Controllers
             catch (DbUpdateConcurrencyException)
             {
                 if (!BlogPostExists(id))
-                    return NotFound();
+                    return NotFound("Post doesn't exist any more");
                 throw;
             }
 
@@ -114,14 +111,9 @@ namespace BlogPlatform.Controllers
         [Authorize]
         public async Task<ActionResult<BlogPost>> DeleteBlogPost(int id)
         {
-            var blogPost = await context.BlogPosts.FindAsync(id);
-            if (blogPost == null)
-                return NotFound();
-
-            var entry = context.Entry(blogPost);
-            await entry.Reference(p => p.Blog).LoadAsync();
-            if (blogPost.Blog.BlogId != GetBlogId())
-                return Forbid(); // wrong blog :-P
+            var (errorResult, blogPost) = await CheckEditingRights(id);
+            if (errorResult != null)
+                return errorResult;
 
             var deleteBlogPost = mapper.Map<BlogPost>(blogPost);
             context.BlogPosts.Remove(blogPost);
@@ -132,5 +124,18 @@ namespace BlogPlatform.Controllers
 
         bool BlogPostExists(int id) =>
             context.BlogPosts.Any(e => e.BlogPostId == id);
+
+        async Task<(ActionResult, EFBlogPost)> CheckEditingRights(int id)
+        {
+            var post = await context.BlogPosts.FindAsync(id);
+            if (post == null)
+                return (NotFound("No post with this id"), null);
+
+            var entry = context.Entry(post);
+            if (post.BlogId != GetBlogId())
+                return (Forbid(), null);
+
+            return (null, post);
+        }
     }
 }

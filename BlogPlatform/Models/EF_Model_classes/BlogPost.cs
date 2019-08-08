@@ -11,6 +11,6 @@ namespace BlogPlatform.Models.EF_Model_classes
         public string BodyText { get; set; }
         public string HeaderText { get; set; }
         public ICollection<Comment> Comments { get; set; }
-        public Blog Blog { get; set; }
+        public int BlogId { get; set; }
     }
 }
