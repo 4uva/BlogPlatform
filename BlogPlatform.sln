@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Requirements.txt = Requirements.txt
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogPlatformTest", "BlogPlatformTest\BlogPlatformTest.csproj", "{9195E056-F76E-4D20-BE08-D2E5B3CDC544}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,10 @@ Global
 		{6AC23F05-0BE7-4AE9-B7A7-101EE9A7891F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6AC23F05-0BE7-4AE9-B7A7-101EE9A7891F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6AC23F05-0BE7-4AE9-B7A7-101EE9A7891F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9195E056-F76E-4D20-BE08-D2E5B3CDC544}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9195E056-F76E-4D20-BE08-D2E5B3CDC544}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9195E056-F76E-4D20-BE08-D2E5B3CDC544}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9195E056-F76E-4D20-BE08-D2E5B3CDC544}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -14,7 +14,6 @@ using AutoMapper;
 using BlogPlatform.Models;
 
 using BlogsDataBaseContext = BlogPlatform.Models.EF_Model_classes.BlogsDataBaseContext;
-using EFBlog = BlogPlatform.Models.EF_Model_classes.Blog;
 using EFBlogPost = BlogPlatform.Models.EF_Model_classes.BlogPost;
 
 namespace BlogPlatform.Controllers
