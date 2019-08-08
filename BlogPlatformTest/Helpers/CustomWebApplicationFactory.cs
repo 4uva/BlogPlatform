@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-
-using BlogPlatform.Models.EF_Model_classes;
 using Microsoft.EntityFrameworkCore;
 
-namespace BlogPlatformUnitTest.Helpers
+using AutoMapper;
+using BlogPlatform.Models.EF_Model_classes;
+using System.Reflection;
+
+namespace BlogPlatformTest.Helpers
 {
     // taken from
     // https://docs.microsoft.com/en-us/aspnet/core/test/integration-tests
@@ -30,6 +32,8 @@ namespace BlogPlatformUnitTest.Helpers
                     options.UseInternalServiceProvider(serviceProvider);
                 });
 
+                services.AddAutoMapper(TestMapper.Configure, new Assembly[0]);
+
                 // Build the service provider.
                 var sp = services.BuildServiceProvider();
 
@@ -42,6 +46,7 @@ namespace BlogPlatformUnitTest.Helpers
 
                     // Ensure the database is created.
                     db.Database.EnsureCreated();
+                    DbCreator.AddItems(db);
                 }
             });
         }
